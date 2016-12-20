@@ -1,12 +1,12 @@
 {
-  "name": "words-test",
+  "name": "constellation-poems",
   "author": "Liminal Poetics",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "keywords": ["pebble-app"],
   "private": true,
   "dependencies": {},
   "pebble": {
-    "displayName": "Words Test",
+    "displayName": "Constellation Poems",
     "uuid": "33c26be1-b941-42c0-b834-17a10e295250",
     "sdkVersion": "3",
     "enableMultiJS": true,
