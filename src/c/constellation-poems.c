@@ -130,12 +130,11 @@ static GFont s_word_font;
 static uint8_t currentWordLayer = 0;
 static TextLayer *createWordLayer(void);
 static int word_indices[NUM_WORD_LAYERS + 1];
-static char is_word_used[NUM_TOTAL_WORDS] = { 0 };
+//static char is_word_used[NUM_TOTAL_WORDS] = { 0 };
 
 // Constellation variables
 static GPoint stars[NUM_STARS];
 static GPoint constellation_stars[NUM_CONSTELLATION_STARS];
-static uint8_t constellation_lines[NUM_CONSTELLATION_STARS][2];
 static uint8_t num_constellation_stars_chosen;
 
 static uint8_t wordPeriod = 1; // Add new word every wordPeriod seconds
@@ -178,7 +177,7 @@ static void destroy_title_layer(void) {
 static void generate_random_constellation(void) {
     num_constellation_stars_chosen = (rand() % (NUM_CONSTELLATION_STARS - 4)) + 4;
 
-    GPoint start, star;
+    GPoint star;
     star.x = rand() % (bounds.size.w/2) + (bounds.size.w/4);
     star.y = rand() % (bounds.size.h/2) + (bounds.size.h/4);
     constellation_stars[0] = GPoint(star.x, star.y);
@@ -427,7 +426,6 @@ static void main_window_load(Window *window) {
     // Get information about the window
     window_layer = window_get_root_layer(window);
     bounds = layer_get_frame(window_layer);
-    GRect max_text_bounds = GRect(0, 0, bounds.size.w - (margin * 2), 2000);
 
     s_stars_layer = layer_create(bounds);
     layer_set_update_proc(s_stars_layer, stars_update_proc);
