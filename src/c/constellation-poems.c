@@ -9,10 +9,8 @@
 // * I like Fell English at 24, but need to recalculate the sizes accordingly
 // * Try different fonts, sans-serif fonts too, also for the time line below 
 // * Try text for time too
-// * Draw "constallations" (new ones), while we're putting up random words
 // * Consider IM Fell Flowers for flourishes in the poems
 // * Need to look at fonts not in Windows font library (Mrs eaves, .fonts dir, etc.)
-// * Create state machine with case/switch to easily move through how I want to do this
 
 #include <pebble.h>
 #define NUM_WORD_LAYERS 12
@@ -109,37 +107,42 @@ static const char *postfixes[] = {
     "der"
 };
 
-
+// Window variables
 static Window *s_main_window;
+static GRect bounds;
 
+// Margin for text area, in pixels
+static uint8_t margin = 4;
+
+// Layers and fonts
 static Layer *window_layer;
 
 static Layer *s_stars_layer;
 
-static uint8_t margin = 4;
-
 static TextLayer *s_time_layer;
+static GFont s_time_font;
 static TextLayer *s_title_layer;
+static GFont s_title_font;
 
+// Layers, fonts, arrays, methods for individual word layers
 static TextLayer *word_layers[NUM_WORD_LAYERS];
+static GFont s_word_font;
 static uint8_t currentWordLayer = 0;
 static TextLayer *createWordLayer(void);
 static int word_indices[NUM_WORD_LAYERS + 1];
 static char is_word_used[NUM_TOTAL_WORDS] = { 0 };
 
-static GFont s_title_font;
-static GFont s_time_font;
-static GFont s_word_font;
-
+// Constellation variables
 static GPoint stars[NUM_STARS];
 static GPoint constellation_stars[NUM_CONSTELLATION_STARS];
 static uint8_t constellation_lines[NUM_CONSTELLATION_STARS][2];
 static uint8_t num_constellation_stars_chosen;
 
-static GRect bounds;
-
 static uint8_t wordPeriod = 1; // Add new word every wordPeriod seconds
 
+/*
+ * Create title layer with optional default title
+ */
 static void generate_title_layer(char *title) {
     uint8_t text_height = 20 + 8 + 20 + 20;
     s_title_layer = text_layer_create(
@@ -158,7 +161,9 @@ static void generate_title_layer(char *title) {
     layer_add_child(window_layer, text_layer_get_layer(s_title_layer));
 }
 
-
+/*
+ * Destroy and unload title font, layer
+ */
 static void destroy_title_layer(void) {
     text_layer_destroy(s_title_layer);
 
@@ -168,11 +173,8 @@ static void destroy_title_layer(void) {
 }
 
 /*
- * To generate costellations:
- * Choose number of stars in constellation
- * Decide if we're going to loop back to the beginning with the drawing
+ * Generate random constellation
  */
-
 static void generate_random_constellation(void) {
     num_constellation_stars_chosen = (rand() % (NUM_CONSTELLATION_STARS - 4)) + 4;
 
@@ -207,6 +209,9 @@ static void generate_random_constellation(void) {
 
 }
 
+/*
+ * Update procedure for drawing our stars and constellation when needed
+ */
 static void stars_update_proc(Layer *layer, GContext *ctx) {
     graphics_context_set_fill_color(ctx, GColorBlack);
 
@@ -233,6 +238,9 @@ static void stars_update_proc(Layer *layer, GContext *ctx) {
     APP_LOG(APP_LOG_LEVEL_INFO, "drawing stars");
 }
 
+/*
+ * Create a random starfield
+ */
 static void generate_random_stars(void) {
     GPoint origin;
 
@@ -245,7 +253,10 @@ static void generate_random_stars(void) {
    
 }
 
-// From: http://stackoverflow.com/questions/6127503/shuffle-array-in-c
+/*
+ * Shuffle an array
+ * From: http://stackoverflow.com/questions/6127503/shuffle-array-in-c
+ */
 static void shuffle(int *array, size_t n)
 {
     if (n > 1) 
@@ -261,6 +272,10 @@ static void shuffle(int *array, size_t n)
     }
 }
 
+/*
+ * Generate a random selection of words from the list
+ * Using Knuth method from http://stackoverflow.com/questions/1608181/unique-random-numbers-in-an-integer-array-in-the-c-programming-language
+ */
 static void generate_random_word_list(void) {
     int max_words = (int)NUM_TOTAL_WORDS;
     int max_layers = (int)NUM_WORD_LAYERS;
@@ -281,21 +296,11 @@ static void generate_random_word_list(void) {
 
     shuffle(word_indices, NUM_WORD_LAYERS);
 
-    /*
-    for (in = NUM_TOTAL_WORDS - NUM_WORD_LAYERS; (in < NUM_TOTAL_WORDS) && (im < NUM_WORD_LAYERS); ++in) {
-        int r = rand() % (in + 1);
-
-        if (is_word_used[r])
-            //we already have r
-            r = in;
-
-        word_indices[im++] = r + 1;
-        APP_LOG(APP_LOG_LEVEL_INFO, "index chosen: %d", r+1);
-        is_word_used[r] = 1;
-    }
-    */
 }
 
+/*
+ * Update our time and buffer
+ */
 static void update_time() {
     // Get a tm structure
     time_t temp = time(NULL);
@@ -309,6 +314,9 @@ static void update_time() {
     text_layer_set_text(s_time_layer, s_buffer);
 }
 
+/*
+ * State machine for words and time update
+ */
 static void tick_handler_seconds(struct tm *tick_time, TimeUnits units_changed) {
     // Add new word every wordPeriod seconds
     if (tick_time->tm_sec % wordPeriod == 0) {
@@ -375,47 +383,10 @@ static void tick_handler_seconds(struct tm *tick_time, TimeUnits units_changed) 
         }
     }
 }
+
 /*
-static void tick_handler_seconds(struct tm *tick_time, TimeUnits units_changed) {
-    int absOffset;
-
-    // Add new word every wordPeriod seconds
-    if (tick_time->tm_sec % wordPeriod == 0) {
-        if (currentWordLayer < NUM_WORD_LAYERS) {
-            TextLayer *new_word_layer = createWordLayer();
-            layer_add_child(window_layer, text_layer_get_layer(new_word_layer));
-        } else if (currentWordLayer == (NUM_WORD_LAYERS)) {
-            // Destroy word layers
-            for (int i = 0; i < NUM_WORD_LAYERS; i++) {
-                text_layer_destroy(word_layers[i]);
-            }
-
-            currentWordLayer += 1;
-        } else if (currentWordLayer > NUM_WORD_LAYERS) {
-            if (currentWordLayer <= (NUM_WORD_LAYERS + 2)) {
-                APP_LOG(APP_LOG_LEVEL_INFO, "adding 1 to word layer");
-                currentWordLayer += 1;
-            } else {
-                currentWordLayer = 0;
-                generate_random_stars();
-                generate_random_constellation();
-                generate_random_word_list();
-            }
-        } 
-
-    } 
-
-    // Update time every minute    
-    if (tick_time->tm_sec % 60 == 0) {
-        update_time();
-        APP_LOG(APP_LOG_LEVEL_INFO, "updating time");
-    }
-
-
-}
-*/
-
-
+ * Create individual word layers at random positions on screen
+ */
 static TextLayer *createWordLayer(void) {
     TextLayer *word_layer;
     
@@ -434,10 +405,6 @@ static TextLayer *createWordLayer(void) {
     text_layer_set_overflow_mode(word_layer, GTextOverflowModeWordWrap);
 
     // For selecting random words
-    // TODO: make code such that only unique words are chosen from list
-    // Probably need some sort of algorithm like this:
-    // http://stackoverflow.com/questions/1608181/unique-random-numbers-in-an-integer-array-in-the-c-programming-language
-    //int index = rand() % (sizeof(words)/sizeof(*words));
     APP_LOG(APP_LOG_LEVEL_INFO, "currentWordLayer: %d", currentWordLayer);
     int index = word_indices[currentWordLayer];
     APP_LOG(APP_LOG_LEVEL_INFO, "selected word %d", index);
@@ -452,6 +419,9 @@ static TextLayer *createWordLayer(void) {
     return word_layer; 
 }
 
+/*
+ * Setup window and layers
+ */
 static void main_window_load(Window *window) {
 
     // Get information about the window
@@ -496,6 +466,9 @@ static void main_window_load(Window *window) {
     //APP_LOG(APP_LOG_LEVEL_INFO, "Afer adding new_word_layer");
 }
 
+/*
+ * Destory layers and fonts
+ */
 static void main_window_unload(Window *window) {
     // Destroy stars layer
     layer_destroy(s_stars_layer);
@@ -517,6 +490,9 @@ static void main_window_unload(Window *window) {
 
 }
 
+/*
+ * Initialize window and callbacks
+ */
 static void init() {
     s_main_window = window_create();
 
@@ -536,11 +512,17 @@ static void init() {
     update_time();
 }
 
+/*
+ * Destroy window
+ */
 static void deinit() {
     // Destroy window
     window_destroy(s_main_window);
 }
 
+/*
+ * Main app loop
+ */
 int main(void) {
     init();
     app_event_loop();
