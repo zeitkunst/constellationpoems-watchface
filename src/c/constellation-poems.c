@@ -381,6 +381,13 @@ static void tick_handler_seconds(struct tm *tick_time, TimeUnits units_changed) 
     
         }
     }
+
+    // Update time every minute    
+    if (tick_time->tm_sec % 60 == 0) {
+        update_time();
+        APP_LOG(APP_LOG_LEVEL_INFO, "updating time");
+    }
+
 }
 
 /*
