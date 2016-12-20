@@ -1,0 +1,56 @@
+{
+  "name": "words-test",
+  "author": "Liminal Poetics",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Words Test",
+    "uuid": "33c26be1-b941-42c0-b834-17a10e295250",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "dummy"
+    ],
+    "resources": {
+      "media": [
+        {
+            "characterRegex":"[\u0000-\u00FF\u201C\u201D]",
+            "type":"font",
+            "name":"FONT_IMFELL_ENGLISH_24",
+            "file":"fonts/IMFeENrm29C.ttf"
+        },
+        {
+            "characterRegex":"[\u0000-\u00FF\u201C\u201D]",
+            "type":"font",
+            "name":"FONT_ADOBE_JENSON_20",
+            "file":"fonts/AJensonPro-Regular.ttf"
+        },
+        {
+            "type":"font",
+            "name":"FONT_PERFECT_DOS_20",
+            "file":"fonts/perfect-dos-vga.ttf",
+            "compatibility":"2.7"
+        },
+        {
+            "type":"font",
+            "name":"FONT_PERFECT_DOS_24",
+            "file":"fonts/perfect-dos-vga.ttf",
+            "compatibility":"2.7"
+        }
+
+      ]
+    }
+
+  }
+}
