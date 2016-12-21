@@ -13,7 +13,7 @@
 // * Need to look at fonts not in Windows font library (Mrs eaves, .fonts dir, etc.)
 
 #include <pebble.h>
-#define NUM_WORD_LAYERS 12
+#define NUM_WORD_LAYERS 8
 #define NUM_STARS 40
 #define NUM_CONSTELLATION_STARS 16 // maximum number of stars in the constellation
 #define NUM_TOTAL_WORDS sizeof(words)/sizeof(*words)
@@ -50,6 +50,7 @@ static const char *words[] = {
     "Luna",
     "rock",
     "void",
+    "darkness",
     "nova",
     "vast",
     "incessant",
@@ -57,10 +58,13 @@ static const char *words[] = {
     "infinite",
     "night",
     "light",
+    "bright",
+    "glowing",
+    "flowing",
     "point",
     "otherness",
-    "sleep",
-    "wake",
+    "sleeping",
+    "waking",
     "awe",
     "wave",
     "companion",
@@ -72,10 +76,21 @@ static const char *words[] = {
     "obscured",
     "patch",
     "disk",
-    "visible",
+    "invisible",
+    "cloud",
+    "incandescent",
+    "luminous",
+    "cluster",
+    "resolved",
+    "globular",
+    "round"
     "ominous",
     "spectrum",
     "gas",
+    "space",
+    "boundary",
+    "distant",
+    "nearby"
 };
 
 static const char *prefixes[] = {
@@ -106,6 +121,8 @@ static const char *postfixes[] = {
     "fed",
     "der"
 };
+
+static char constellation_name[18];
 
 // Window variables
 static Window *s_main_window;
@@ -147,7 +164,7 @@ static void generate_title_layer(char *title) {
     s_title_layer = text_layer_create(
             GRect(margin, PBL_IF_ROUND_ELSE(84 - (text_height/2), 84 - (text_height/2)), bounds.size.w - (2 * margin), text_height));
 
-    s_title_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ADOBE_JENSON_20));
+    s_title_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_CHARIS_SIL_20));
 
     // Improve the layout to be more like a watchface
     text_layer_set_background_color(s_title_layer, GColorClear);
@@ -288,8 +305,8 @@ static void generate_random_word_list(void) {
         int rm = max_layers - im;
 
         if (rand() % rn < rm) {
-            word_indices[im++] = in + 1;
-            APP_LOG(APP_LOG_LEVEL_INFO, "index chosen: %d", in+1);
+            word_indices[im++] = in;
+            APP_LOG(APP_LOG_LEVEL_INFO, "index chosen: %d", in);
         }
     }
 
@@ -326,7 +343,12 @@ static void tick_handler_seconds(struct tm *tick_time, TimeUnits units_changed) 
                     current_period += 1;
                 } else {
                     current_period = 0;
-                    generate_title_layer("CONSTELLATION KEYWORDS");
+                    int pre_index = rand() % (sizeof(prefixes)/sizeof(*prefixes));
+                    int post_index = rand() % (sizeof(postfixes)/sizeof(*postfixes));
+                    snprintf(constellation_name, sizeof(constellation_name), "NAME:\n%s%s", prefixes[pre_index], postfixes[post_index]);
+
+                    //generate_title_layer("CONSTELLATION KEYWORDS");
+                    generate_title_layer(constellation_name);
                     stars_state = STATE_TITLE;
                 }
                 break;
@@ -402,7 +424,7 @@ static TextLayer *createWordLayer(void) {
     randY = rand() % ((uint8_t)bounds.size.h - 40);
 
 
-    word_layer = text_layer_create(GRect(randX - 2*margin, PBL_IF_ROUND_ELSE(randY - 2*margin, randY - 2*margin), bounds.size.w - (margin * 2), 140));
+    word_layer = text_layer_create(GRect(randX + margin, PBL_IF_ROUND_ELSE(randY - 2*margin, randY - 2*margin), bounds.size.w - (margin * 2), 140));
 
     // Style word layer text
     text_layer_set_background_color(word_layer, GColorClear);
@@ -447,7 +469,7 @@ static void main_window_load(Window *window) {
     s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_20));
 
     // Create word layer GFont
-    s_word_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_ADOBE_JENSON_20));
+    s_word_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_CHARIS_SIL_20));
 
 
     // Create the text layer with specific bounds
