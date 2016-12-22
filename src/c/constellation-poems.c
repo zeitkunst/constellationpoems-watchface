@@ -29,9 +29,9 @@ typedef enum
 } stars_state_t;
 
 uint8_t state_periods[] = {
+    1,
     2,
-    3,
-    2,
+    1,
     NUM_WORD_LAYERS,
     2
 };
@@ -110,6 +110,8 @@ static const char *prefixes[] = {
 };
 
 static const char *postfixes[] = {
+    "lux",
+    "stor",
     "tion",
     "able",
     "ser",
@@ -119,6 +121,7 @@ static const char *postfixes[] = {
     "yack",
     "kulp",
     "fed",
+    "ula",
     "der"
 };
 
@@ -154,8 +157,8 @@ static GPoint stars[NUM_STARS];
 static GPoint constellation_stars[NUM_CONSTELLATION_STARS];
 static uint8_t num_constellation_stars_chosen;
 
-//static uint8_t wordPeriod = 10; // Add new word every wordPeriod seconds
-static uint8_t wordPeriod = 1; // Add new word every wordPeriod seconds
+static uint8_t wordPeriod = 10; // Add new word every wordPeriod seconds
+//static uint8_t wordPeriod = 1; // Add new word every wordPeriod seconds
 
 /*
  * Create title layer with optional default title
@@ -529,7 +532,11 @@ static void init() {
         .unload = main_window_unload
     });    
 
+#if defined(PBL_COLOR)
+    window_set_background_color(s_main_window, GColorOxfordBlue);
+#else
     window_set_background_color(s_main_window, GColorBlack);
+#endif
 
     // Only one subscription to this service is allowed
     tick_timer_service_subscribe(SECOND_UNIT, tick_handler_seconds);
