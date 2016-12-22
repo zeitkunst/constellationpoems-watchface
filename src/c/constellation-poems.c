@@ -154,6 +154,7 @@ static GPoint stars[NUM_STARS];
 static GPoint constellation_stars[NUM_CONSTELLATION_STARS];
 static uint8_t num_constellation_stars_chosen;
 
+//static uint8_t wordPeriod = 10; // Add new word every wordPeriod seconds
 static uint8_t wordPeriod = 1; // Add new word every wordPeriod seconds
 
 /*
