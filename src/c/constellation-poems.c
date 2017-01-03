@@ -83,7 +83,7 @@ static const char *words[] = {
     "cluster",
     "resolved",
     "globular",
-    "round"
+    "round",
     "ominous",
     "spectrum",
     "gas",
@@ -425,7 +425,7 @@ static TextLayer *createWordLayer(void) {
     uint8_t randX, randY;
 
     randX = rand() % ((uint8_t)(bounds.size.w/2));
-    randY = rand() % ((uint8_t)bounds.size.h - 40);
+    randY = rand() % ((uint8_t)bounds.size.h - 20);
 
 
     word_layer = text_layer_create(GRect(randX + margin, PBL_IF_ROUND_ELSE(randY - 2*margin, randY - 2*margin), bounds.size.w - (margin * 2), 140));
@@ -531,6 +531,8 @@ static void init() {
         .load = main_window_load,
         .unload = main_window_unload
     });    
+
+    srand((unsigned int) time(NULL));
 
 #if defined(PBL_COLOR)
     window_set_background_color(s_main_window, GColorOxfordBlue);
