@@ -17,6 +17,7 @@
 #define NUM_STARS 40
 #define NUM_CONSTELLATION_STARS 16 // maximum number of stars in the constellation
 #define NUM_TOTAL_WORDS sizeof(words)/sizeof(*words)
+#define TIMER_PERIOD 500 // number of milliseconds between updates
 
 // State machine for stars and constellation poetry
 typedef enum
@@ -156,6 +157,19 @@ static int word_indices[NUM_WORD_LAYERS + 1];
 static GPoint stars[NUM_STARS];
 static GPoint constellation_stars[NUM_CONSTELLATION_STARS];
 static uint8_t num_constellation_stars_chosen;
+
+// Keeping track of state time
+AppTimer *stateTimer; // Timer for checking our state
+int currentStateTime = 0; // Counter for keeping track of time
+
+// Amount of time to stay in each state, based on the granularity of the timer
+int state_times[] = {
+    1 * TIMER_PERIOD,
+    5 * TIMER_PERIOD,
+    2 * TIMER_PERIOD,
+    10 * TIMER_PERIOD, 
+    3 * TIMER_PERIOD
+};
 
 static uint8_t wordPeriod = 10; // Add new word every wordPeriod seconds
 //static uint8_t wordPeriod = 1; // Add new word every wordPeriod seconds
@@ -334,11 +348,105 @@ static void update_time() {
     text_layer_set_text(s_time_layer, s_buffer);
 }
 
+/**
+ * Timer that gets called every TIMER_PERIOD milliseconds to deal with state changes
+ */
+static void stateTimerCallback(void *data) {
+
+    switch (stars_state) {
+        case STATE_START:
+            if (currentStateTime < state_times[STATE_START]) {
+
+                currentStateTime += TIMER_PERIOD;
+            } else {
+                currentStateTime = 0;
+                int pre_index = rand() % (sizeof(prefixes)/sizeof(*prefixes));
+                int post_index = rand() % (sizeof(postfixes)/sizeof(*postfixes));
+                snprintf(constellation_name, sizeof(constellation_name), "NAME:\n%s%s", prefixes[pre_index], postfixes[post_index]);
+
+                //generate_title_layer("CONSTELLATION KEYWORDS");
+                generate_title_layer(constellation_name);
+                stars_state = STATE_TITLE;
+
+            }
+            break;
+        case STATE_TITLE:
+            if (currentStateTime < state_times[STATE_TITLE]) {
+                currentStateTime += TIMER_PERIOD;
+            } else {
+                currentStateTime = 0;
+                destroy_title_layer();
+                stars_state = STATE_BLANK_1;
+            }
+            break;
+        case STATE_BLANK_1:
+            if (currentStateTime < state_times[STATE_BLANK_1]) {
+                currentStateTime += TIMER_PERIOD;
+            } else {
+                currentStateTime = 0;
+                stars_state = STATE_WORDS;
+            }
+
+            break;
+        case STATE_WORDS:
+            // Here, add a new word in each period
+            // So we need to check:
+            // * If we need to add a new word
+            // * If we have reached the maximum number of words
+            if (currentWordLayer < NUM_WORD_LAYERS) {
+                if (currentStateTime < state_times[STATE_WORDS]) {
+                    currentStateTime += TIMER_PERIOD;
+                } else {
+                    TextLayer *new_word_layer = createWordLayer();
+                    layer_add_child(window_layer, text_layer_get_layer(new_word_layer));
+                    currentStateTime = 0;
+                }
+
+            } else {
+                // Destroy word layers
+                for (int i = 0; i < NUM_WORD_LAYERS; i++) {
+                    text_layer_destroy(word_layers[i]);
+                }
+
+                currentStateTime = 0;
+                currentWordLayer = 0;
+                stars_state = STATE_BLANK_2;
+
+            }
+
+
+
+            break;
+        case STATE_BLANK_2:
+            if (currentStateTime < state_times[STATE_BLANK_2]) {
+                currentStateTime += TIMER_PERIOD;
+            } else {
+                generate_random_stars();
+                generate_random_constellation();
+                generate_random_word_list();
+                layer_mark_dirty(s_stars_layer);
+
+                stars_state = STATE_START;
+                currentStateTime = 0;
+            }
+
+            break;
+        
+    }
+
+
+
+    // Register timer for next period
+    stateTimer = app_timer_register(TIMER_PERIOD, (AppTimerCallback) stateTimerCallback, NULL);
+}
+
+
 /*
  * State machine for words and time update
  */
 static void tick_handler_seconds(struct tm *tick_time, TimeUnits units_changed) {
     // Add new word every wordPeriod seconds
+    /*
     if (tick_time->tm_sec % wordPeriod == 0) {
         APP_LOG(APP_LOG_LEVEL_INFO, "current_state: %d", stars_state);
         switch(stars_state) {
@@ -407,6 +515,7 @@ static void tick_handler_seconds(struct tm *tick_time, TimeUnits units_changed) 
     
         }
     }
+    */
 
     // Update time every minute    
     if (tick_time->tm_sec % 60 == 0) {
@@ -495,6 +604,10 @@ static void main_window_load(Window *window) {
     // TODO: Not sure why this part causes problems...
     //layer_add_child(window_layer, text_layer_get_layer(new_word_layer));
     //APP_LOG(APP_LOG_LEVEL_INFO, "Afer adding new_word_layer");
+
+    // Register state timer callback
+    stateTimer = app_timer_register(TIMER_PERIOD, (AppTimerCallback) stateTimerCallback, NULL);
+
 }
 
 /*
@@ -518,6 +631,9 @@ static void main_window_unload(Window *window) {
 
     // Unload word layer font
     fonts_unload_custom_font(s_word_font);
+
+    // Destroy timer
+    app_timer_cancel(stateTimer);
 
 }
 
